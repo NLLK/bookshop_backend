@@ -23,6 +23,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='supportticketattachment',
             name='attachment',
-            field=models.FileField(upload_to=support.models.user_directory_path),
+            field=models.FileField(upload_to='ticket_attachments'),
         ),
     ]
