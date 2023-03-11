@@ -1,5 +1,6 @@
 from django.db import models
 from books.models import Book
+import json
 
 class AssortmentType(models.Model):
     name = models.CharField(max_length=255)
@@ -35,3 +36,5 @@ class Assortment(models.Model):
     number = models.IntegerField(blank=True)
     links = models.ManyToManyField(AssortmentLink)
 
+    def toJSON(self):
+        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
