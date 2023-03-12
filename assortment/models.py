@@ -2,6 +2,12 @@ from django.db import models
 from books.models import Book
 import json
 
+
+class AssortmentTypeEnum:
+    ebook = 1
+    paper = 2
+    audio = 3
+
 class AssortmentType(models.Model):
     name = models.CharField(max_length=255)
 

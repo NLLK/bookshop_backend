@@ -1,10 +1,11 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import Assortment
+from .models import Assortment, AssortmentTypeEnum
 from books.models import Book, Book_genre
 from service.models import Review, ReviewStatusEnum
 from django.db.models import Max, Subquery, Avg
+from rest_framework import status
 
 class GetAssortmentListView(APIView):
     # authentication_classes = [SessionAuthentication, BasicAuthentication]
@@ -37,7 +38,6 @@ class GetAssortmentListView(APIView):
 
         content = []
         assortment_types = {}
-        ratings = {}
 
         params = request.query_params
 
@@ -100,7 +100,72 @@ class GetAssortmentListView(APIView):
                         except ValueError:
                             pass
                 if rating_flag:
-                    content.append(GetAssortmentListView.create_content_obj(assortment, authors, genres, assortment_types[book.id], rating_avg))
+                    content.append(self.create_content_obj(assortment, authors, genres, assortment_types[book.id], rating_avg))
             
         return Response(content)
-# Create your views here.
+    
+
+class GetAssortmentBookInfo(APIView):
+    # authentication_classes = [SessionAuthentication, BasicAuthentication]
+    #permission_classes = [IsAuthenticated]
+
+    @staticmethod
+    def create_content_obj(assortment, authors, genres, assortment_types, rating, assortment_type_choosed):
+        obj = {
+            'book_id': assortment.book.id,
+            'title': assortment.book.name,
+            'authors': authors,
+            'genres': genres,
+            'publisher': assortment.book.publisher.name,
+            'series': assortment.book.series.name,
+            'publish_year': assortment.book.publish_year,
+            'age_restriction': assortment.book.age_restriction,
+            'img_link': assortment.book.img_link.name,
+            'price': assortment.price,
+            'number': assortment.number,
+            'rating': rating,
+            'assortment_types': [assortment_type.name for assortment_type in assortment_types],
+            'description': assortment.book.description
+        }
+        if assortment_type_choosed:
+            if assortment_type_choosed == AssortmentTypeEnum.audio:
+                obj['audio_length_min'] = assortment.audio_length_min
+            else: obj['page_number'] = assortment.page_number
+
+        return obj
+
+    def get(self, request, format=None):
+        params = request.query_params
+
+        if 'book_id' not in params:
+            return Response(status = status.HTTP_400_BAD_REQUEST)
+        assortment_list = Assortment.objects.filter(book__id = params['book_id']).select_related('book').prefetch_related('book__authors', 'book__genres')
+
+        if 'type' in params:
+            assortment_list = assortment_list.filter(assortment_type = params['type'])
+            try:
+                assortment_type_choosed = int(params['type'])
+            except Exception:
+                return Response(status = status.HTTP_400_BAD_REQUEST)
+
+        content = []
+        assortment_types = {}
+
+        for assortment in assortment_list:
+            book_id = assortment.book.id
+            if book_id not in assortment_types:
+                assortment_types[book_id] = []
+            assortment_types[book_id].append(assortment.assortment_type)
+
+        for assortment in assortment_list:
+            book_id = assortment.book.id
+            if book_id not in [x['book_id'] for x in content]:
+                book = assortment.book
+                authors = [f"{author.firstname} {author.lastname}" for author in book.authors.all()]
+                genres = [genre.name for genre in book.genres.all()]
+
+                rating_avg = Review.objects.filter(book__pk = book.pk, moderated = ReviewStatusEnum.OK).aggregate(Avg('rating'))['rating__avg']
+                
+                content.append(self.create_content_obj(assortment, authors, genres, assortment_types[book.id], rating_avg, assortment_type_choosed))
+            
+        return Response(content)
