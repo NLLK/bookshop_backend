@@ -47,7 +47,8 @@ class GetAssortmentListView(APIView):
             genres = params['genres'].split(',')
             assortment_list = assortment_list.filter(book__genres__id__in=genres).distinct()
         if 'type' in params:
-            assortment_list = assortment_list.filter(assortment_type__id=params['type'])
+            types = params['type'].split(',')
+            assortment_list = assortment_list.filter(assortment_type__id__in=types)
         # if 'price' in params:
         #     price = params['price'].split('-')
         #     if len(price) == 1:
