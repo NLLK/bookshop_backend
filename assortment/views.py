@@ -124,7 +124,7 @@ class GetAssortmentBookInfo(APIView):
             'price': assortment.price,
             'number': assortment.number,
             'rating': rating,
-            'assortment_types': [assortment_type.name for assortment_type in assortment_types],
+            'assortment_types': assortment_types if len(assortment_types) > 1 else assortment_types[0],
             'description': assortment.book.description
         }
         if assortment_type_choosed:
@@ -135,6 +135,9 @@ class GetAssortmentBookInfo(APIView):
         return obj
 
     def get(self, request, format=None):
+        content = []
+        assortment_types = {}  
+        assortment_type_choosed = -1
         params = request.query_params
 
         if 'book_id' not in params:
@@ -148,8 +151,6 @@ class GetAssortmentBookInfo(APIView):
             except Exception:
                 return Response(status = status.HTTP_400_BAD_REQUEST)
 
-        content = []
-        assortment_types = {}
 
         for assortment in assortment_list:
             book_id = assortment.book.id

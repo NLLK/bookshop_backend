@@ -34,7 +34,8 @@ class AssortmentLink(models.Model):
 
 class Assortment(models.Model):
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
-    assortment_type = models.ForeignKey(AssortmentType, on_delete=models.CASCADE)
+    assortment_type = models.SmallIntegerField()
+    # assortment_type = models.ForeignKey(AssortmentType, on_delete=models.CASCADE)
     available = models.BooleanField()
     page_number = models.IntegerField(blank=True)
     audio_length_min = models.IntegerField(blank=True, default=-1)
