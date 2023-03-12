@@ -34,7 +34,7 @@ class Assortment(models.Model):
     audio_length_min = models.IntegerField(blank=True, default=-1)
     price = models.FloatField(blank=True)
     number = models.IntegerField(blank=True)
-    links = models.ManyToManyField(AssortmentLink)
+    links = models.ManyToManyField(AssortmentLink, blank=True)
 
     def toJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)

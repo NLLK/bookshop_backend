@@ -13,7 +13,7 @@ class Review(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
     content = models.TextField()
-    rating = models.FloatField(blank=True)
+    rating = models.FloatField(default=0.0)
     moderated = models.IntegerField()
 
 class ShoppingCart(models.Model):
