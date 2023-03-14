@@ -1,9 +1,9 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import Assortment, AssortmentTypeEnum
+from .models import Assortment
 from books.models import Book, Book_genre
-from service.models import Review, ReviewStatusEnum
+from service.models import Review
 from django.db.models import Max, Subquery, Avg
 from rest_framework import status
 
@@ -29,7 +29,7 @@ class GetAssortmentListView(APIView):
             'number': assortment.number,
             'rating': rating,
             #'links': [link.url for link in assortment.links.all()],
-            'assortment_types': [assortment_type.name for assortment_type in assortment_types]
+            'assortment_types': assortment_types
         }
 
     def get(self, request, format=None):
@@ -48,7 +48,8 @@ class GetAssortmentListView(APIView):
             assortment_list = assortment_list.filter(book__genres__id__in=genres).distinct()
         if 'type' in params:
             types = params['type'].split(',')
-            assortment_list = assortment_list.filter(assortment_type__id__in=types)
+                        
+            assortment_list = assortment_list.filter(assortment_type__in=types)
         # if 'price' in params:
         #     price = params['price'].split('-')
         #     if len(price) == 1:
@@ -61,8 +62,7 @@ class GetAssortmentListView(APIView):
                 assortment_list = assortment_list.filter(book__publish_year=year[0])
             elif len(year) == 2:
                 assortment_list = assortment_list.filter(book__publish_year__range=(year[0], year[1]))
-                #rating = Review.objects.filter(book__pk = book.pk, moderated = ReviewStatusEnum.OK).aggregate(Avg('rating'))['rating__avg']    
-
+                
         for assortment in assortment_list:
             book_id = assortment.book.id
             if book_id not in assortment_types:
@@ -76,7 +76,7 @@ class GetAssortmentListView(APIView):
                 authors = [f"{author.firstname} {author.lastname}" for author in book.authors.all()]
                 genres = [genre.name for genre in book.genres.all()]
 
-                rating_avg = Review.objects.filter(book__pk = book.pk, moderated = ReviewStatusEnum.OK).aggregate(Avg('rating'))['rating__avg']
+                rating_avg = Review.objects.filter(book__pk = book.pk, moderated = Review.ReviewStatusChoices.OK).aggregate(Avg('rating'))['rating__avg']
                 
                 rating_flag = True
 
@@ -128,7 +128,7 @@ class GetAssortmentBookInfo(APIView):
             'description': assortment.book.description
         }
         if assortment_type_choosed:
-            if assortment_type_choosed == AssortmentTypeEnum.audio:
+            if assortment_type_choosed == Assortment.AssortmentTypeChoices.AUDIO:
                 obj['audio_length_min'] = assortment.audio_length_min
             else: obj['page_number'] = assortment.page_number
 
@@ -165,7 +165,7 @@ class GetAssortmentBookInfo(APIView):
                 authors = [f"{author.firstname} {author.lastname}" for author in book.authors.all()]
                 genres = [genre.name for genre in book.genres.all()]
 
-                rating_avg = Review.objects.filter(book__pk = book.pk, moderated = ReviewStatusEnum.OK).aggregate(Avg('rating'))['rating__avg']
+                rating_avg = Review.objects.filter(book__pk = book.pk, moderated = Review.ReviewStatusChoices.OK).aggregate(Avg('rating'))['rating__avg']
                 
                 content.append(self.create_content_obj(assortment, authors, genres, assortment_types[book.id], rating_avg, assortment_type_choosed))
             
